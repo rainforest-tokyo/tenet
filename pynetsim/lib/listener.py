@@ -12,6 +12,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 import pynetsim.lib.core as core
 from pynetsim.protocols.tcp import TCP
+from pynetsim.protocols.telnet import TELNET
 
 log = logging.getLogger(__name__)
 
@@ -129,13 +130,14 @@ class TCPSocketListener(SocketListener):
                 protocol_class = self.guess_protocol(first_payload, self.config)
             else:
                 log.debug("Send Probe : Connect to Honey and load data")
-                conn.send(bytes("{}\r\n".format(self.config.get("main").get("probe_response", "220 TKY.JP")), encoding="utf-8"))
+                #conn.send(bytes("{}\r\n".format(self.config.get("main").get("probe_response", "220 TKY.JP")), encoding="utf-8"))
                 s = select.select([conn], [], [], 5)
                 if s[0]:
                     first_payload = conn.recv(self.recv_size)
                     protocol_class = self.guess_protocol(first_payload, self.config)
                 else:
-                    protocol_class = TCP
+                    #protocol_class = TCP
+                    protocol_class = TELNET
             protocol = protocol_class(self.config, conn, addr, payload=first_payload)
             log.debug("Connection from {}:{} detected as {}".format(addr[0], addr[1], protocol.get_name()))
             protocol.run()

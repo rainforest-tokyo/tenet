@@ -68,6 +68,7 @@ Connection: close
         identified_protocol = tcp.TCP
         if payload and cls.http_regex.match(payload.decode('utf-8', errors="ignore")):
             identified_protocol = HTTP
+
             cls.recv_buffer = payload
             for protocol in cls.get_known_protocols(config):
                 log.debug("Checking for {}".format(protocol))

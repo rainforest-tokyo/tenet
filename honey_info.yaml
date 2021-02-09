@@ -7,6 +7,6 @@ ssh:
   port: 8080
   reg: ''
 telnet:
-- ip: 192.168.0.10
-  port: 8080
+- ip: 127.0.0.1
+  port: 23
   reg: ''
