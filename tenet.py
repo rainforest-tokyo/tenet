@@ -1,5 +1,6 @@
 import yaml
 import logging
+import argparse
 import pynetsim.lib.core as core
 from concurrent.futures import ThreadPoolExecutor
 from pynetsim.lib.listener import UDPSocketListener, TCPSocketListener
@@ -7,7 +8,12 @@ from pynetsim.lib.listener import UDPSocketListener, TCPSocketListener
 log = logging.getLogger("tenet.daemon")
 
 def main():
-    config = core.get_config()
+    parser = argparse.ArgumentParser(description='ペイロードで判定して送信先を変更する')
+    parser.add_argument('-c', '--config', help='出力ファイル名', default='tenet.conf')
+    args = parser.parse_args()
+
+    core.init_conf( args.config )
+    config = core.get_config( )
     core.init_logging("pynetsim", log_level=getattr(logging, config.get("main").get("log_level", "debug").upper()))
     log.debug("Starting socket listeners")
     listener_pool = ThreadPoolExecutor(max_workers=2)

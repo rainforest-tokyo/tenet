@@ -14,7 +14,14 @@ import pynetsim.lib.conf as conf
 
 log = logging.getLogger(__name__)
 
-HoneyList = yaml.load(open("honey_info.yaml"), Loader=yaml.FullLoader)
+gConf     = None
+HoneyList = None
+
+def init_conf( conf_filename ) :
+    global gConf
+    global HoneyList
+    gConf = conf.ConfigObject(conf_filename)
+    HoneyList = yaml.load(open(gConf.get("honey").get("conf_file", "honey_info.yaml")), Loader=yaml.FullLoader)
 
 def init_logging(logger_name, log_level=logging.DEBUG, log_file=None):
     """
@@ -37,13 +44,14 @@ def init_logging(logger_name, log_level=logging.DEBUG, log_file=None):
 
 
 def get_config():
+    global gConf
     """
     Parse pynetsim configuration file 
     
     :return: ConfigObject
     """
-    return conf.ConfigObject()
-
+    #return conf.ConfigObject()
+    return gConf
 
 def wait():
     """

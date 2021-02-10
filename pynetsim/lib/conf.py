@@ -5,7 +5,7 @@ import configparser
 
 
 class ConfigObject(object):
-    def __init__(self, config_file="pynetsim.conf"):
+    def __init__(self, config_file="tenet.conf"):
         conf = configparser.ConfigParser()
         conf.read(config_file)
         for section in conf.sections():
