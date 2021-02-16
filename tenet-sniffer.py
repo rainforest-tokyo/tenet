@@ -185,7 +185,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.read != None :
-        main( None, args.read, args.output )
+        main( None, None, args.read, args.output )
     else :
         main( args.interface, args.target, None, args.output )
 
