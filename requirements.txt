@@ -1,2 +1,5 @@
 pypcap
 dpkt
+bashlex
+pyinotify
+filehash
