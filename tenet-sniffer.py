@@ -3,6 +3,7 @@
 import os
 import sys
 import json
+import uuid
 import base64
 import socket
 import string
@@ -20,10 +21,16 @@ def common_tcp_data( ip ) :
     src_a = socket.inet_ntoa(src)
     dst_a = socket.inet_ntoa(dst)
 
-    source_info = "%s:%d"%(src_a, tcp.sport)
+    # TCP情報収集
+    tcp_data = {}
+    tcp_data["seq"] = tcp.seq
+    tcp_data["seq_raw"] = tcp.seq
+    tcp_data["window_size_value"] = tcp.win
+    tcp_data["window_size"] = tcp.win
+    tcp_data["window_size_scalefactor"] = tcp.win
 
-    return { "destination_ip": dst_a, "destination_port": tcp.dport,
-             "source_ip": src_a, "source_port": tcp.sport }
+    return { "uuid": str(uuid.uuid4()), "destination_ip": dst_a, "destination_port": tcp.dport,
+            "source_ip": src_a, "source_port": tcp.sport, "tcp":tcp_data }
 
 def parse_tcp_tls( ip, tcp_buffer ) :
     TLS_HANDSHAKE = 22
@@ -42,8 +49,59 @@ def parse_tcp_tls( ip, tcp_buffer ) :
     return ""
 
 def parse_tcp_http( ip, tcp_buffer ) :
-    datas = dpkt.http.Request(tcp_buffer)
-    return str(datas)
+    cmd_list = ["wget","curl","rm","chmod","busybox","mv","ps","kill","xargs","iptables","grep","pkill","netstat","pgrep",
+            "chattr","service","systemctl","crontab","apt","apt-get","unhide","ufw","userdel","adduser","useradd"]
+    pattern = "https?://[\w/:%#\$&\?\(\)~\.=\+\-]+"
+
+    http = dpkt.http.Request(tcp_buffer)
+    
+    # HTTP情報収集
+    http_data = {}
+    http_data["http_http_request_method"] = http.method
+    http_data["http_http_request_uri"] = http.uri
+    http_data["http_http_request_version"] = "HTTP/"+http.version
+    http_data["http_http_request"] = True
+    http_data["http_http_request_number"] = "1"
+    for key in http.headers :
+        http_data["http_http_"+key] = http.headers[key]
+    #http_data["http_http_request_full_uri"] = "http://"+http_data["http_http_host"]+"/"+http_data["http_http_request_uri"]
+    http_data["http_http_request_full_uri"] = "http:/"+os.path.join(http_data["http_http_host"],http_data["http_http_request_uri"])
+
+    http_data["http_http_params"] = urllib.parse.urlparse(http_data["http_http_request_full_uri"]).query
+    http_data["http_http_body"] = http.body.decode('utf-8')
+
+    # URIの分割
+    dirname, basename = os.path.split(http_data["http_http_request_uri"])
+    #http_data["http_http_request_uri_detail"] = {"urlpath": dirname, "resourcename": basename}
+    http_data["http_http_request_uri_urlpath"]      = dirname
+    http_data["http_http_request_uri_resourcename"] = basename
+
+    # 攻撃で利用されるコマンド文字列の検索
+    http_data["http_http_cmd"] = []
+
+    check_target = http_data["http_http_params"]+" "+http_data["http_http_body"]
+    for cmd in cmd_list :
+        if (cmd in check_target) :
+            http_data["http_http_cmd"].append( cmd )
+
+    # ダウンロードURLの抽出
+    http_data["http_http_download"] = re.findall(pattern, check_target )
+
+    # ダウンロードURLの分解
+    http_data["http_http_download_detail"] = []
+    for url in http_data["http_http_download"] :
+        u_parse = urllib.parse.urlparse(url)
+        result = { 
+                "method"      : u_parse.scheme, 
+                "domain"      : u_parse.netloc, 
+                "path"        : u_parse.path, 
+                "params"      : u_parse.params, 
+                "query"       : u_parse.query, 
+                "query_detail": [] }
+        result["query_detail"] = urllib.parse.parse_qs(u_parse.query)
+        http_data["http_http_download_detail"].append(result["query_detail"])
+
+    return str(http), http_data
 
 def parse_tcp_telnet( ip, tcp_buffer ) :
     datas = dpkt.telnet.strip_options(tcp_buffer)
@@ -64,9 +122,10 @@ def detect_tcp( ip, tcp_info ) :
     result["payload"] = base64.b64encode(tcp_info["buffer"]).decode()
 
     try :
-        ret_data = parse_tcp_http( ip, tcp_info["buffer"] )
+        ret_data, http_data = parse_tcp_http( ip, tcp_info["buffer"] )
         result["app_proto"] = "http"
         result["payload_printable"] = ret_data
+        result["http"] = http_data
         return result
     except :
         pass
