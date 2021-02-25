@@ -8,7 +8,7 @@ import logging
 import select
 import datetime
 
-import pynetsim.protocols.tcp as tcp
+#import pynetsim.protocols.tcp as tcp
 import pynetsim.lib.core as core
 
 from pynetsim.protocols.protocol import BotWhisperer
@@ -21,7 +21,9 @@ class TCP(BotWhisperer):
 
     def run(self):
         # Select Honey
-        honey_info = core.HoneyList["telnet"][0]
+        config_info = core.get_honey_list()
+        print(config_info)
+        honey_info = config_info["telnet"][0]
 
         # Connect to Honey
         honey_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -31,7 +31,9 @@ Connection: close
 
     def run(self):
         # Select Honey
-        honey_info = core.HoneyList["http"][0]
+        config_info = core.get_honey_list()
+        print(config_info)
+        honey_info = config_info["http"][0]
 
         # Connect to Honey
         honey_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

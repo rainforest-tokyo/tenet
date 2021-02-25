@@ -21,7 +21,8 @@ def init_conf( conf_filename ) :
     global gConf
     global HoneyList
     gConf = conf.ConfigObject(conf_filename)
-    HoneyList = yaml.load(open(gConf.get("honey").get("conf_file", "honey_info.yaml")), Loader=yaml.FullLoader)
+    yaml_file = gConf.get("honey").get("conf_file")
+    HoneyList = yaml.load(open(yaml_file), Loader=yaml.FullLoader)
 
 def init_logging(logger_name, log_level=logging.DEBUG, log_file=None):
     """
@@ -42,6 +43,8 @@ def init_logging(logger_name, log_level=logging.DEBUG, log_file=None):
         fhandler.setFormatter(logging.Formatter("[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s"))
         logger.addHandler(fhandler)
 
+def get_honey_list():
+    return HoneyList
 
 def get_config():
     global gConf

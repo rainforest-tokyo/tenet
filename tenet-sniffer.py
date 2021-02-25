@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 import os
@@ -208,11 +209,14 @@ def main( device, pcap_option, pcap_file, output_file ) :
                 print(result, flush=True)
 
                 dt_now = datetime.datetime.now()
-                filename = dt_now.strftime( output_file )
-                f = open(filename, 'a')
-                json.dump(result, f)
-                f.write( '\n' )
-                f.close()
+                if output_file != None :
+                    filename = dt_now.strftime( output_file )
+                    f = open(filename, 'a')
+                    json.dump(result, f)
+                    f.write( '\n' )
+                    f.close()
+                else :
+                    print( json.dumps(result) )
 
         elif type(ip.data) == dpkt.udp.UDP:
             udp = ip.data
@@ -237,7 +241,7 @@ def main( device, pcap_option, pcap_file, output_file ) :
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='sniffer')
     parser.add_argument('-i', '--interface', help='target device')
-    parser.add_argument('-t', '--target', help='target host')
+    parser.add_argument('-t', '--target', help='target host 1.1.1.1 or 2.2.2.2')
     parser.add_argument('-r', '--read', help='pcapファイル名')
     parser.add_argument('-o', '--output', help='出力ファイル名 ', default="/iot_honey/logs/rfpf_%Y%m%d.json")
 
@@ -247,4 +251,5 @@ if __name__ == '__main__':
         main( None, None, args.read, args.output )
     else :
         main( args.interface, args.target, None, args.output )
+#        main( args.interface, args.target, None, None )
 

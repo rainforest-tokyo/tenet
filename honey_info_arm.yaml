@@ -1,0 +1,14 @@
+http:
+- ip: 127.0.0.1
+  port: 18080
+  reg: ''
+ssh:
+- ip: 127.0.0.1
+  port: 0
+  reg: ''
+telnet:
+# ARM
+- ip: 127.0.0.1
+  port: 12523
+  reg: ''
+

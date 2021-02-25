@@ -7,13 +7,23 @@
 
 sudo apt install libpcap
 
+set_iptables.sh  start_sniffer.sh  start_tenet.sh
+
+### iptables設定 ###
+$ ./set_iptables.sh
+
 ### プロトコル判定ツール ###
+$ ./start_tenet.sh
 
-* ToDo
+nohup python3 tenet.py -c tenet_amd.conf > /tmp/amd_out.log &
+nohup python3 tenet.py -c tenet_arm.conf > /tmp/arm_out.log &
+nohup python3 tenet.py -c tenet_mips.conf > /tmp/mips_out.log &
 
-  
 
 ### スニファーツール ###
+$ ./start_sniffer.sh
+
+nohup python3 tenet-sniffer.py -i enp0s25 -t 133.34.157.65 or 133.34.157.66 or 133.34.157.67 > /tmp/sniffer.log &
 
 * Liveでのパケット解析とpcapファイルの解析機能がある
 

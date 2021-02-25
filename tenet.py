@@ -9,7 +9,7 @@ log = logging.getLogger("tenet.daemon")
 
 def main():
     parser = argparse.ArgumentParser(description='ペイロードで判定して送信先を変更する')
-    parser.add_argument('-c', '--config', help='出力ファイル名', default='tenet.conf')
+    parser.add_argument('-c', '--config', help='出力ファイル名', default='tenet_amd.conf')
     args = parser.parse_args()
 
     core.init_conf( args.config )

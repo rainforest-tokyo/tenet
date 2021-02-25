@@ -21,7 +21,8 @@ class TELNET(BotWhisperer):
 
     def run(self):
         # Select Honey
-        honey_info = core.HoneyList["telnet"][0]
+        config_info = core.get_honey_list()
+        honey_info = config_info["telnet"][0]
 
         # Connect to Honey
         honey_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -57,90 +58,114 @@ class TELNET(BotWhisperer):
         # Login
         buffer = None
         while True:
-            # Attacker -> Honey
-            #log.debug("Login: Attacker -> Honey")
-            request = self.recv()
-            if request == None :
-                continue
-            if buffer == None :
-                buffer = request
-            else :
-                buffer += request
+            while True:
+                # Attacker -> Honey
+                #log.debug("Login: Attacker -> Honey")
+                request = self.recv()
+                if request == None :
+                    continue
+                if buffer == None :
+                    buffer = request
+                else :
+                    buffer += request
 
-            if "\r" not in buffer.decode('utf-8') :
-                continue
+                if "\r" not in buffer.decode('utf-8') :
+                    continue
 
-            #log.debug( buffer )
-            honey_socket.send( buffer )
-            #log.debug("Return recv")
+                #log.debug( buffer )
+                honey_socket.send( buffer )
+                #log.debug("Return recv")
+                buffer = None
+
+                # Honey -> Attacker
+                #log.debug("Login: Honey -> Attacker")
+                response = honey_socket.recv( 4096*10 )
+                #log.debug( response )
+                self.send( response )
+                try :
+                    if "\r\n" in response.decode('utf-8') :
+                        break
+                except :
+                    pass
+
+            # Login After
+            #log.debug("Login After: Honey -> Attacker")
+            response = honey_socket.recv( 4096*10 )
+            #log.debug( response )
+            self.send( response )
+
+            # Password
             buffer = None
+            while True:
+                # Attacker -> Honey
+                #log.debug("Password: Attacker -> Honey")
+                request = self.recv()
+                if request == None :
+                    continue
+                if buffer == None :
+                    buffer = request
+                else :
+                    buffer += request
 
-            # Honey -> Attacker
-            #log.debug("Login: Honey -> Attacker")
-            response = honey_socket.recv( 4096*10 )
-            #log.debug( response )
-            self.send( response )
-            try :
-                if "\r\n" in response.decode('utf-8') :
-                    break
-            except :
-                pass
+                if "\r" not in buffer.decode('utf-8') :
+                    continue
 
-        # Login After
-        #log.debug("Login After: Honey -> Attacker")
-        response = honey_socket.recv( 4096*10 )
-        #log.debug( response )
-        self.send( response )
+                #log.debug( buffer )
+                honey_socket.send( buffer )
+                #log.debug("Return recv")
+                buffer = None
 
-        # Password
-        buffer = None
-        while True:
-            # Attacker -> Honey
-            #log.debug("Password: Attacker -> Honey")
-            request = self.recv()
-            if request == None :
-                continue
-            if buffer == None :
-                buffer = request
-            else :
-                buffer += request
+                # Honey -> Attacker
+                #log.debug("Password: Honey -> Attacker")
+                response = honey_socket.recv( 4096*10 )
+                #log.debug( response )
+                self.send( response )
 
-            if "\r" not in buffer.decode('utf-8') :
-                continue
+                try :
+                    if "\r\n" in response.decode('utf-8') :
+                        break
+                except :
+                    pass
 
-            #log.debug( buffer )
-            honey_socket.send( buffer )
-            #log.debug("Return recv")
-            buffer = None
+            # Banner
+            banner = ""
+            while True:
+                #log.debug("Banner: Honey -> Attacker")
+                response = honey_socket.recv( 4096*10 )
+                #log.debug( response )
+                self.send( response )
 
-            # Honey -> Attacker
-            #log.debug("Password: Honey -> Attacker")
-            response = honey_socket.recv( 4096*10 )
-            #log.debug( response )
-            self.send( response )
+                try :
+                    banner += response.decode('utf-8')
+                    if "$" in response.decode('utf-8') :
+                        break
+                    elif ">" in response.decode('utf-8') :
+                        break
+                    elif "#" in response.decode('utf-8') :
+                        break
+                    elif "Login incorrect" in response.decode('utf-8') :
+                        break
+                except :
+                    pass
 
-            try :
-                if "\r\n" in response.decode('utf-8') :
-                    break
-            except :
-                pass
+            if "$" in banner :
+                break
+            elif ">" in banner :
+                break
+            elif "#" in banner :
+                break
 
-        # Banner
-        while True:
-            #log.debug("Banner: Honey -> Attacker")
-            response = honey_socket.recv( 4096*10 )
-            #log.debug( response )
-            self.send( response )
+            while True:
+                #log.debug("Banner: Honey -> Attacker")
+                response = honey_socket.recv( 4096*10 )
+                #log.debug( response )
+                self.send( response )
 
-            try :
-                if "$" in response.decode('utf-8') :
-                    break
-                elif ">" in response.decode('utf-8') :
-                    break
-                elif "#" in response.decode('utf-8') :
-                    break
-            except :
-                pass
+                try :
+                    if "login:" in response.decode('utf-8') :
+                        break
+                except :
+                    pass
 
         # Command
         buffer = None
@@ -172,7 +197,8 @@ class TELNET(BotWhisperer):
             #log.debug("Return recv")
             buffer = None
 
-        #log.debug("Exit Loop")
+        log.debug("Exit Loop")
+        print("Exit Loop")
 
         honey_socket.close()
         self.socket.close()
