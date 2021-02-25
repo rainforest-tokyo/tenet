@@ -120,7 +120,10 @@ def detect_tcp( ip, tcp_info ) :
     result["timestamp"] = str(datetime.datetime.utcfromtimestamp(tcp_info["start_time"]))
     result["connect_time"] = str(datetime.datetime.utcfromtimestamp(tcp_info["end_time"]))
     result["duration"] = tcp_info["end_time"]-tcp_info["start_time"]
-    result["payload"] = base64.b64encode(tcp_info["buffer"]).decode()
+    try :
+        result["payload"] = base64.b64encode(tcp_info["buffer"]).decode()
+    except :
+        result["payload"] = "base64 except"
 
     try :
         ret_data, http_data = parse_tcp_http( ip, tcp_info["buffer"] )
@@ -206,6 +209,8 @@ def main( device, pcap_option, pcap_file, output_file ) :
                 del packet_buffer[source_info]
 
                 result = detect_tcp( ip, tcp_info )
+                if result == None :
+                    continue
                 print(result, flush=True)
 
                 dt_now = datetime.datetime.now()
