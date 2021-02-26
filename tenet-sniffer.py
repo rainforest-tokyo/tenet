@@ -68,7 +68,8 @@ def parse_tcp_http( ip, tcp_buffer ) :
     for key in http.headers :
         http_data["http_http_"+key] = http.headers[key]
     #http_data["http_http_request_full_uri"] = "http://"+http_data["http_http_host"]+"/"+http_data["http_http_request_uri"]
-    http_data["http_http_request_full_uri"] = "http:/"+os.path.join(http_data["http_http_host"],http_data["http_http_request_uri"])
+    #http_data["http_http_request_full_uri"] = "http:/"+os.path.join(http_data["http_http_host"],http_data["http_http_request_uri"])
+    http_data["http_http_request_full_uri"] = "http://"+http_data["http_http_host"]+"/"+http_data["http_http_request_uri"]
 
     http_data["http_http_params"] = urllib.parse.urlparse(http_data["http_http_request_full_uri"]).query
     http_data["http_http_body"] = http.body.decode('utf-8')
@@ -113,6 +114,10 @@ def parse_tcp_telnet( ip, tcp_buffer ) :
         tmp.append( item.decode() )
     return "\\n".join(tmp)
 
+def parse_tcp_smb( ip, tcp_buffer ) :
+    smb = dpkt.smb.SMB(tcp_buffer)
+    return str(repr(smb))
+    
 def parse_udp_stun( ip, udp_buffer ) :
     datas = dpkt.stun.parse_attrs(udp_buffer)
     print(datas)
@@ -141,6 +146,15 @@ def detect_tcp( ip, tcp_info ) :
         parse_tcp_tls( ip, tcp_info["buffer"] )
         result["app_proto"] = "ssl"
         return result
+    except :
+        import traceback
+        traceback.print_exc()
+
+    try :
+        ret_data = parse_tcp_smb( ip, tcp_info["buffer"] )
+        result["app_proto"] = "smb"
+        result["payload_printable"] = ret_data
+        return None
     except :
         import traceback
         traceback.print_exc()

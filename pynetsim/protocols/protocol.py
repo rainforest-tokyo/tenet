@@ -35,7 +35,10 @@ class BotWhisperer(object):
         while not load:
             s = select.select([self.socket], [], [], 10)
             if s[0]:
-                load = self.socket.recv(self.recv_size)
+                try :
+                    load = self.socket.recv(self.recv_size)
+                except :
+                    self.socket.close()
         return load
 
     def send(self, buffer):
