@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import re
 import sys
 import json
 import uuid
@@ -14,6 +15,7 @@ import datetime
 import dpkt, pcap
 
 import argparse
+import urllib.parse
 
 def common_tcp_data( ip ) :
     tcp = ip.data
@@ -132,14 +134,16 @@ def detect_tcp( ip, tcp_info ) :
         result["http"] = http_data
         return result
     except :
-        pass
+        import traceback
+        traceback.print_exc()
 
     try :
         parse_tcp_tls( ip, tcp_info["buffer"] )
         result["app_proto"] = "ssl"
         return result
     except :
-        pass
+        import traceback
+        traceback.print_exc()
 
     try :
         ret_data = parse_tcp_telnet( ip, tcp_info["buffer"] )
@@ -147,7 +151,9 @@ def detect_tcp( ip, tcp_info ) :
         result["payload_printable"] = ret_data
         return result
     except :
-        pass
+        import traceback
+        traceback.print_exc()
+#        pass
 
 def main( device, pcap_option, pcap_file, output_file ) :
     packet_buffer = {}

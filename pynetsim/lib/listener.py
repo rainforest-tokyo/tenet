@@ -108,22 +108,23 @@ class TCPSocketListener(SocketListener):
         try:
             s = select.select([conn], [], [], 2)
             if s[0]:
-                first_payload = conn.recv(self.recv_size, socket.MSG_PEEK)
-                if core.is_tls_hello(first_payload):
-                    log.debug("SSL connection received")
-                    conn = ssl.wrap_socket(conn,
-                                           ssl_version=ssl.PROTOCOL_SSLv23,
-                                           certfile="/tmp/cert.pem",
-                                           keyfile="/tmp/key.pem",
-                                           server_side=True,
-                                           do_handshake_on_connect=True)
-                    s = select.select([conn], [], [], 1)
-                    if s[0]:
-                        first_payload = conn.recv(self.recv_size)
-                    else:
-                        first_payload = None
-                else:
-                    first_payload = conn.recv(self.recv_size)
+#                first_payload = conn.recv(self.recv_size, socket.MSG_PEEK)
+#                if core.is_tls_hello(first_payload):
+#                    log.debug("SSL connection received")
+#                    conn = ssl.wrap_socket(conn,
+#                                           ssl_version=ssl.PROTOCOL_SSLv23,
+#                                           certfile="/tmp/cert.pem",
+#                                           keyfile="/tmp/key.pem",
+#                                           server_side=True,
+#                                           do_handshake_on_connect=True)
+#                    s = select.select([conn], [], [], 1)
+#                    if s[0]:
+#                        first_payload = conn.recv(self.recv_size)
+#                    else:
+#                        first_payload = None
+#                else:
+#                    first_payload = conn.recv(self.recv_size)
+                 first_payload = conn.recv(self.recv_size)
             else:
                 first_payload = None
             if first_payload:

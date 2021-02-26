@@ -32,7 +32,6 @@ Connection: close
     def run(self):
         # Select Honey
         config_info = core.get_honey_list()
-        print(config_info)
         honey_info = config_info["http"][0]
 
         # Connect to Honey
@@ -50,6 +49,7 @@ Connection: close
 
         honey_socket.close()
         self.socket.close()
+        log.debug( "Close Honey {}:{}".format(honey_info["ip"],honey_info["port"]) )
 
     def recv(self):
         s = select.select([self.socket], [], [], 1)
@@ -72,13 +72,13 @@ Connection: close
             identified_protocol = HTTP
 
             cls.recv_buffer = payload
-            for protocol in cls.get_known_protocols(config):
-                log.debug("Checking for {}".format(protocol))
-                protocol_class = core.find_protocol_class(protocol)
-                new_protocol = protocol_class.guess_protocol_from_payload(payload, config, addr)
-                log.debug(new_protocol)
-                if new_protocol != identified_protocol:
-                    log.debug("New sub-protocol detected: {}".format(new_protocol.name))
-                    identified_protocol = new_protocol
-                    break
+#            for protocol in cls.get_known_protocols(config):
+#                log.debug("Checking for {}".format(protocol))
+#                protocol_class = core.find_protocol_class(protocol)
+#                new_protocol = protocol_class.guess_protocol_from_payload(payload, config, addr)
+#                log.debug(new_protocol)
+#                if new_protocol != identified_protocol:
+#                    log.debug("New sub-protocol detected: {}".format(new_protocol.name))
+#                    identified_protocol = new_protocol
+#                    break
         return identified_protocol

@@ -7,6 +7,7 @@ import socket
 import logging
 import select
 import datetime
+import threading
 
 import pynetsim.protocols.tcp as tcp
 import pynetsim.lib.core as core
@@ -19,6 +20,52 @@ class TELNET(BotWhisperer):
 
     name = "telnet"
 
+    def from_attacker(self, honey_socket):
+        buffer = None
+        while self.active:
+            request = self.recv()
+            if request == None :
+                continue
+
+            try :
+                if buffer == None :
+                    buffer = request.decode('utf-8')
+                else :
+                    buffer += request.decode('utf-8')
+
+                honey_socket.send( request )
+                if "exit" in buffer : 
+                    break 
+            except :
+                honey_socket.send( request )
+
+        self.active = False
+
+    def to_attacker(self, honey_socket):
+        buffer = None
+        while self.active:
+            try :
+                response = honey_socket.recv( 4096*10 )
+            except :
+                    break 
+
+            if response == None :
+                continue
+
+            try :
+                if buffer == None :
+                    buffer = response.decode('utf-8')
+                else :
+                    buffer += response.decode('utf-8')
+
+                self.send( response )
+                if "Login timed out" in buffer : 
+                    break 
+            except :
+                self.send( response )
+
+        self.active = False
+
     def run(self):
         # Select Honey
         config_info = core.get_honey_list()
@@ -28,180 +75,28 @@ class TELNET(BotWhisperer):
         honey_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         log.debug( "Connect Honey {}:{}".format(honey_info["ip"],honey_info["port"]) )
         honey_socket.connect((honey_info["ip"],honey_info["port"]))
+        honey_socket.settimeout(60.0)
 
-        # recv banner
-        response = honey_socket.recv( 4096*10 )
-        #log.debug( response )
-        self.send( response )
+        self.active = True
 
-        # Initial
-        while True:
-            # Attacker -> Honey
-            #log.debug("Initial: Attacker -> Honey")
-            request = self.recv()
-            if request != None :
-                #log.debug( request )
-                honey_socket.send( request )
-                #log.debug("Return recv")
+        # Start Thread
+        log.debug("Start Thread")
+        print("Start Thread")
+        thread1 = threading.Thread(target=self.from_attacker, args=(honey_socket,))
+        thread2 = threading.Thread(target=self.to_attacker, args=(honey_socket,))
 
-            # Honey -> Attacker
-            #log.debug("Initial: Honey -> Attacker")
-            response = honey_socket.recv( 4096*10 )
-            #log.debug( response )
-            self.send( response )
-            try :
-                if "login:" in response.decode('utf-8') :
-                    break
-            except :
-                pass
+        thread1.start()
+        thread2.start()
 
-        # Login
-        buffer = None
-        while True:
-            while True:
-                # Attacker -> Honey
-                #log.debug("Login: Attacker -> Honey")
-                request = self.recv()
-                if request == None :
-                    continue
-                if buffer == None :
-                    buffer = request
-                else :
-                    buffer += request
-
-                if "\r" not in buffer.decode('utf-8') :
-                    continue
-
-                #log.debug( buffer )
-                honey_socket.send( buffer )
-                #log.debug("Return recv")
-                buffer = None
-
-                # Honey -> Attacker
-                #log.debug("Login: Honey -> Attacker")
-                response = honey_socket.recv( 4096*10 )
-                #log.debug( response )
-                self.send( response )
-                try :
-                    if "\r\n" in response.decode('utf-8') :
-                        break
-                except :
-                    pass
-
-            # Login After
-            #log.debug("Login After: Honey -> Attacker")
-            response = honey_socket.recv( 4096*10 )
-            #log.debug( response )
-            self.send( response )
-
-            # Password
-            buffer = None
-            while True:
-                # Attacker -> Honey
-                #log.debug("Password: Attacker -> Honey")
-                request = self.recv()
-                if request == None :
-                    continue
-                if buffer == None :
-                    buffer = request
-                else :
-                    buffer += request
-
-                if "\r" not in buffer.decode('utf-8') :
-                    continue
-
-                #log.debug( buffer )
-                honey_socket.send( buffer )
-                #log.debug("Return recv")
-                buffer = None
-
-                # Honey -> Attacker
-                #log.debug("Password: Honey -> Attacker")
-                response = honey_socket.recv( 4096*10 )
-                #log.debug( response )
-                self.send( response )
-
-                try :
-                    if "\r\n" in response.decode('utf-8') :
-                        break
-                except :
-                    pass
-
-            # Banner
-            banner = ""
-            while True:
-                #log.debug("Banner: Honey -> Attacker")
-                response = honey_socket.recv( 4096*10 )
-                #log.debug( response )
-                self.send( response )
-
-                try :
-                    banner += response.decode('utf-8')
-                    if "$" in response.decode('utf-8') :
-                        break
-                    elif ">" in response.decode('utf-8') :
-                        break
-                    elif "#" in response.decode('utf-8') :
-                        break
-                    elif "Login incorrect" in response.decode('utf-8') :
-                        break
-                except :
-                    pass
-
-            if "$" in banner :
-                break
-            elif ">" in banner :
-                break
-            elif "#" in banner :
-                break
-
-            while True:
-                #log.debug("Banner: Honey -> Attacker")
-                response = honey_socket.recv( 4096*10 )
-                #log.debug( response )
-                self.send( response )
-
-                try :
-                    if "login:" in response.decode('utf-8') :
-                        break
-                except :
-                    pass
-
-        # Command
-        buffer = None
-        while True:
-            # Attacker -> Honey
-            request = self.recv()
-            if request == None :
-                s = select.select([honey_socket], [], [], 1)
-                if s[0]:
-                    # Honey -> Attacker
-                    #log.debug("Command: Honey -> Attacker")
-                    response = honey_socket.recv( 4096*10 )
-                    #log.debug( response )
-                    if len(response.decode('utf-8')) == 0 :
-                        break
-                    self.send( response )
-                continue
-            if buffer == None :
-                buffer = request
-            else :
-                buffer += request
-
-            if "\r" not in buffer.decode('utf-8') :
-                continue
-
-            #log.debug("Command: Attacker -> Honey")
-            #log.debug( buffer )
-            honey_socket.send( buffer )
-            #log.debug("Return recv")
-            buffer = None
+        thread1.join()
+        thread2.join()
 
         log.debug("Exit Loop")
         print("Exit Loop")
 
         honey_socket.close()
         self.socket.close()
+        log.debug( "Close Honey {}:{}".format(honey_info["ip"],honey_info["port"]) ) 
 
     def recv(self):
         s = select.select([self.socket], [], [], 1)
